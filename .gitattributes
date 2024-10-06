@@ -1,0 +1,9 @@
+*   text=auto
+
+*.cpp   text=lf
+*.hpp   text=lf
+*.txt   text=lf
+*.json  text=lf
+
+.gitattributes  text=lf
+.gitignore  text=lf

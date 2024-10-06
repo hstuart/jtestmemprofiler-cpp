@@ -1,0 +1,139 @@
+name: Release
+
+permissions:
+  contents: write
+
+on:
+    workflow_dispatch: 
+        inputs:
+            version:
+                required: true
+                type: string
+                description: "Target version number for the release"
+    push:
+        tags:
+            - "v*.*.*"
+
+jobs:
+    build-windows-jdk21:
+        runs-on: windows-latest
+
+        steps:
+            -
+                uses: actions/checkout@v4
+            -
+                uses: ./.github/actions/build-and-upload
+                with:
+                    java-version: 21
+                    cmake-configure: cmake -G "Visual Studio 17 2022" -A x64 -B build .
+                    target-artifact-name: "JTestMemProfiler-jdk21-${{ inputs.version || github.ref_name }}.dll"
+                    artifact-path: build/Release/JTestMemProfiler.dll
+
+    build-windows-jdk17:
+        runs-on: windows-latest
+
+        steps:
+            -
+                uses: actions/checkout@v4
+            -
+                uses: ./.github/actions/build-and-upload
+                with:
+                    java-version: 17
+                    cmake-configure: cmake -G "Visual Studio 17 2022" -A x64 -B build .
+                    target-artifact-name: "JTestMemProfiler-jdk17-${{ inputs.version || github.ref_name }}.dll"
+                    artifact-path: build/Release/JTestMemProfiler.dll
+
+    build-linux-jdk21:
+        runs-on: ubuntu-latest
+
+        steps:
+            -
+                uses: actions/checkout@v4
+            -
+                run: sudo apt-get install -y build-essential cmake
+            -
+                uses: ./.github/actions/build-and-upload
+                with:
+                    java-version: 21
+                    cmake-configure: cmake -G "Unix Makefiles" -B build .
+                    target-artifact-name: "libJTestMemProfiler-jdk21-${{ inputs.version || github.ref_name }}.so"
+                    artifact-path: build/libJTestMemProfiler.so
+
+    build-linux-jdk17:
+        runs-on: ubuntu-latest
+
+        steps:
+            -
+                uses: actions/checkout@v4
+            -
+                run: sudo apt-get install -y build-essential cmake
+            -
+                uses: ./.github/actions/build-and-upload
+                with:
+                    java-version: 17
+                    cmake-configure: cmake -G "Unix Makefiles" -B build .
+                    target-artifact-name: "libJTestMemProfiler-jdk17-${{ inputs.version || github.ref_name }}.so"
+                    artifact-path: build/libJTestMemProfiler.so
+
+    build-macos-jdk21:
+        runs-on: macos-latest
+
+        steps:
+            -
+                uses: actions/checkout@v4
+            -
+                uses: ./.github/actions/build-and-upload
+                with:
+                    java-version: 21
+                    cmake-configure: cmake -DCMAKE_BUILD_TYPE=Release -DCMAKE_OSX_ARCHITECTURES="x86_64;arm64" -B build .
+                    target-artifact-name: "libJTestMemProfiler-jdk21-${{ inputs.version || github.ref_name }}.dylib"
+                    artifact-path: build/libJTestMemProfiler.dylib
+
+    build-macos-jdk17:
+        runs-on: macos-latest
+
+        steps:
+            -
+                uses: actions/checkout@v4
+            -
+                uses: ./.github/actions/build-and-upload
+                with:
+                    java-version: 17
+                    cmake-configure: cmake -DCMAKE_BUILD_TYPE=Release -DCMAKE_OSX_ARCHITECTURES="x86_64;arm64" -B build .
+                    target-artifact-name: "libJTestMemProfiler-jdk17-${{ inputs.version || github.ref_name }}.dylib"
+                    artifact-path: build/libJTestMemProfiler.dylib
+
+
+    release:
+        needs:
+            - build-windows-jdk21
+            - build-windows-jdk17
+            - build-linux-jdk21
+            - build-linux-jdk17
+            - build-macos-jdk21
+            - build-macos-jdk17
+
+        runs-on: ubuntu-latest
+
+        steps:
+            -
+                uses: actions/checkout@v4
+            -
+                uses: actions/download-artifact@v4
+                id: download
+                with:
+                    merge-multiple: true
+                    path: download
+            -
+                run: ls -lR "${{ steps.download.outputs.download-path }}"
+            -
+                uses: mikepenz/release-changelog-builder-action@v5
+                id: build_changelog
+            -
+                uses: softprops/action-gh-release@v2
+                with:
+                    body: ${{ steps.build_changelog.outputs.changelog }}
+                    tag_name: ${{ inputs.version || github.ref_name }}
+                    fail_on_unmatched_files: true
+                    files: |
+                        download/*

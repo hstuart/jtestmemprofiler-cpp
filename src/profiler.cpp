@@ -167,11 +167,11 @@ extern "C" JNIEXPORT jboolean Java_dk_stuart_jtestmemprofiler_NativeProfiler_isE
 	return setGlobalProfilerElement<jboolean>(setter);
 }
 
-extern "C" JNIEXPORT void Java_dk_stuart_jtestmemprofiler_NativeProfiler_setSampleRate(JNIEnv *env, jclass klass, jint sample_interval)
+extern "C" JNIEXPORT jint Java_dk_stuart_jtestmemprofiler_NativeProfiler_setSampleRate(JNIEnv *env, jclass klass, jint sample_interval)
 {
 	auto setter = [sample_interval](profiler *p)
 	{
-		p->setSampleRate(sample_interval);
+		return p->setSampleRate(sample_interval);
 	};
-	setGlobalProfilerElement<void>(setter);
+	return setGlobalProfilerElement<jvmtiError>(setter);
 }

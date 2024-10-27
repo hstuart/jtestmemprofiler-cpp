@@ -1,0 +1,66 @@
+﻿{
+    "version": 3,
+    "cmakeMinimumRequired": {
+        "major": 3,
+        "minor": 8
+    },
+    "configurePresets": [
+        {
+            "name": "base",
+            "generator": "Ninja",
+            "binaryDir": "${sourceDir}/build",
+            "installDir": "${sourceDir}/out/install/${presetName}",
+            "cacheVariables": {
+                "CMAKE_BUILD_TYPE": "Release"
+            }
+        },
+        {
+            "name": "base-develop",
+            "inherits": [
+                "base"
+            ],
+            "cacheVariables": {
+                "CMAKE_BUILD_TYPE": "Debug"
+            }
+        },
+        {
+            "name": "base-windows",
+            "inherits": [
+                "base"
+            ],
+            "architecture": {
+                "value": "x64",
+                "strategy": "external"
+            },
+            "cacheVariables": {
+                "CMAKE_C_COMPILER": "cl.exe",
+                "CMAKE_CXX_COMPILER": "cl.exe"
+            },
+            "condition": {
+                "type": "equals",
+                "lhs": "${hostSystemName}",
+                "rhs": "Windows"
+            }
+        },
+        {
+            "name": "default-windows",
+            "inherits": [
+                "base-windows"
+            ],
+            "architecture": {
+                "value": "x64",
+                "strategy": "external"
+            }
+        },
+        {
+            "name": "default-windows-develop",
+            "inherits": [
+                "base-develop",
+                "base-windows"
+            ]
+        },
+        {
+            "name": "default-linux"
+        }
+    ]
+}

@@ -1,0 +1,47 @@
+name: "Build and upload"
+description: "Compile using specified C++ compiler and upload as artifact"
+
+inputs:
+  java-version:
+    required: true
+    description: Java version to fetch and link against
+    type: string
+  cmake-configure:
+    required: false
+    description: cmake configuration call
+    type: string
+  target-artifact-name:
+    required: true
+    description: Name to upload artifact as
+    type: string
+  artifact-path:
+    required: true
+    description: Path to the artifact to upload
+    type: string
+
+runs:
+  using: composite
+  steps:
+    -
+        uses: actions/setup-java@v4
+        with:
+            distribution: 'temurin'
+            java-version: ${{ inputs.java-version }}
+            architecture: 'x64'
+    -
+        run: ${{ inputs.cmake-configure }}
+        shell: bash
+    -
+        run: cmake --build build --config Release
+        shell: bash
+    -
+        run: mv "${{ inputs.artifact-path }}" "${{ inputs.target-artifact-name }}"
+        shell: bash
+    -
+        uses: actions/upload-artifact@v4
+        with:
+            name: ${{ inputs.target-artifact-name }}
+            path: ${{ inputs.target-artifact-name }}
+            if-no-files-found: error
+            retention-days: 1
+            overwrite: true

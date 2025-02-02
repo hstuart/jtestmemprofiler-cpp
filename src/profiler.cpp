@@ -1,7 +1,8 @@
-#include <exception>
 #include <functional>
 
 #include "profiler.hpp"
+
+#include <mutex>
 
 profiler::profiler(jvmtiEnv *jvmtiEnv) : _jvmtiEnv(jvmtiEnv), _collector(nullptr), _filter(nullptr), _enabled(false), _sample_interval(0)
 {
@@ -51,8 +52,7 @@ jvmtiError profiler::setSampleRate(jint sampling_interval)
 	return JVMTI_ERROR_NONE;
 }
 
-bool profiler::isEnabled()
-{
+bool profiler::isEnabled() const {
 	return _enabled;
 }
 
@@ -61,19 +61,16 @@ void profiler::sampledObjectAlloc(jvmtiEnv *jvmti_env,
 								  jthread thread,
 								  jobject object,
 								  jclass object_klass,
-								  jlong size)
-{
+								  jlong size) const {
 
 	auto filter = _filter;
 	if (nullptr != filter)
 	{
-		auto predicate = filter->sampledObjectAlloc(jvmti_env, jni_env, thread, object, object_klass, size);
-		if (!predicate)
+		if (const auto predicate = filter->sampledObjectAlloc(jvmti_env, jni_env, thread, object, object_klass, size); !predicate)
 			return;
 	}
 
-	auto collector = _collector;
-	if (nullptr != collector)
+	if (const auto collector = _collector; nullptr != collector)
 	{
 		collector->sampledObjectAlloc(jvmti_env, jni_env, thread, object, object_klass, size);
 	}
@@ -84,18 +81,19 @@ std::mutex profiler_mutex;
 
 void setGlobalProfiler(profiler *profiler)
 {
-	std::lock_guard<std::mutex> lock(profiler_mutex);
+	std::lock_guard lock(profiler_mutex);
 	global_profiler = profiler;
 }
 
 template <typename T>
 T setGlobalProfilerElement(const std::function<T(profiler *)> &func)
 {
-	std::lock_guard<std::mutex> lock(profiler_mutex);
+	std::lock_guard lock(profiler_mutex);
 
 	if constexpr (std::is_void_v<T>)
 	{
 		func(global_profiler);
+		return T();
 	}
 	else
 	{
@@ -105,17 +103,14 @@ T setGlobalProfilerElement(const std::function<T(profiler *)> &func)
 
 profiler *getGlobalProfiler()
 {
-	std::lock_guard<std::mutex> lock(profiler_mutex);
+	std::lock_guard lock(profiler_mutex);
 	return global_profiler;
 }
 
 void releaseGlobalProfiler()
 {
-	std::lock_guard<std::mutex> lock(profiler_mutex);
-	if (nullptr != global_profiler)
-	{
-		delete global_profiler;
-	}
+	std::lock_guard lock(profiler_mutex);
+	delete global_profiler;
 	global_profiler = nullptr;
 }
 
@@ -123,7 +118,7 @@ extern "C" JNIEXPORT void Java_dk_stuart_jtestmemprofiler_NativeProfiler_setColl
 {
 	auto setter = [nativeHandle](profiler *p)
 	{
-		p->setCollector((collector *)nativeHandle);
+		p->setCollector(reinterpret_cast<collector *>(nativeHandle));
 	};
 	setGlobalProfilerElement<void>(setter);
 }
@@ -132,7 +127,7 @@ extern "C" JNIEXPORT void Java_dk_stuart_jtestmemprofiler_NativeProfiler_setFilt
 {
 	auto setter = [nativeHandle](profiler *p)
 	{
-		p->setFilter((filter *)nativeHandle);
+		p->setFilter(reinterpret_cast<filter *>(nativeHandle));
 	};
 	setGlobalProfilerElement<void>(setter);
 }

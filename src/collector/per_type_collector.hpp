@@ -7,17 +7,17 @@
 
 #include "collector.hpp"
 
-class per_type_collector : collector
+class per_type_collector final : collector
 {
 public:
 	const std::map<std::string, jlong> &getAllocations();
 
-	virtual void sampledObjectAlloc(jvmtiEnv *jvmti_env,
-									JNIEnv *jni_env,
-									jthread thread,
-									jobject object,
-									jclass object_klass,
-									jlong size);
+	void sampledObjectAlloc(jvmtiEnv *jvmti_env,
+	                        JNIEnv *jni_env,
+	                        jthread thread,
+	                        jobject object,
+	                        jclass object_klass,
+	                        jlong size) override;
 
 private:
 	std::mutex _m;

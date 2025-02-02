@@ -2,3 +2,7 @@
 /out/
 /.vs/
 /.vscode/
+/cmake-build-*/
+/.idea/
+/CoverageReport-*/
+LastCoverageResults.log

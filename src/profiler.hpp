@@ -1,7 +1,5 @@
 #pragma once
 
-#include <mutex>
-
 #include "jvmti.h"
 
 #include "collector/collector.hpp"
@@ -10,7 +8,7 @@
 class profiler
 {
 public:
-	profiler(jvmtiEnv *jvmtiEnv);
+	explicit profiler(jvmtiEnv *jvmtiEnv);
 	~profiler();
 
 	void setCollector(collector *collector);
@@ -18,7 +16,7 @@ public:
 
 	jvmtiError enable();
 	jvmtiError disable();
-	bool isEnabled();
+	bool isEnabled() const;
 
 	jvmtiError setSampleRate(jint sampling_interval);
 
@@ -27,10 +25,10 @@ public:
 							jthread thread,
 							jobject object,
 							jclass object_klass,
-							jlong size);
+							jlong size) const;
 
-	collector *getCollector() { return _collector; }
-	filter *getFilter() { return _filter; }
+	[[nodiscard]] collector *getCollector() const { return _collector; }
+	[[nodiscard]] filter *getFilter() const { return _filter; }
 
 private:
 	jint _sample_interval;

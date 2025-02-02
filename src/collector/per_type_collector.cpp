@@ -15,40 +15,39 @@ void per_type_collector::sampledObjectAlloc(jvmtiEnv *jvmti_env,
 
 	char *className = nullptr;
 	char *genericPart = nullptr;
-	auto error = jvmti_env->GetClassSignature(object_klass, &className, &genericPart);
+	const auto error = jvmti_env->GetClassSignature(object_klass, &className, &genericPart);
 
-	std::lock_guard<std::mutex> lock(this->_m);
+	std::lock_guard lock(this->_m);
 	_allocations[error ? "unknown" : className] += size;
 }
 
 extern "C" JNIEXPORT jlong JNICALL Java_dk_stuart_jtestmemprofiler_NativePerTypeCollector_init(JNIEnv *env, jclass klass)
 {
-	return (jlong) new per_type_collector();
+	return reinterpret_cast<jlong>(new per_type_collector());
 }
 
 extern "C" JNIEXPORT void JNICALL Java_dk_stuart_jtestmemprofiler_NativePerTypeCollector_cleanup(JNIEnv *env, jclass klass, jlong nativeHandle)
 {
-	if (nullptr != (per_type_collector *)nativeHandle)
-		delete (per_type_collector *)nativeHandle;
+	delete reinterpret_cast<per_type_collector *>(nativeHandle);
 }
 
 extern "C" JNIEXPORT jobject JNICALL Java_dk_stuart_jtestmemprofiler_NativePerTypeCollector_get(JNIEnv *env, jclass klass, jlong nativeHandle)
 {
-	auto collector = (per_type_collector *)nativeHandle;
+	const auto collector = reinterpret_cast<per_type_collector *>(nativeHandle);
 
-	auto hashMapClass = env->FindClass("java/util/HashMap");
-	auto hashMapConstructor = env->GetMethodID(hashMapClass, "<init>", "()V");
-	auto putMethod = env->GetMethodID(hashMapClass, "put", "(Ljava/lang/Object;Ljava/lang/Object;)Ljava/lang/Object;");
+	const auto hashMapClass = env->FindClass("java/util/HashMap");
+	const auto hashMapConstructor = env->GetMethodID(hashMapClass, "<init>", "()V");
+	const auto putMethod = env->GetMethodID(hashMapClass, "put", "(Ljava/lang/Object;Ljava/lang/Object;)Ljava/lang/Object;");
 
-	auto longClass = env->FindClass("java/lang/Long");
-	auto longConstructor = env->GetMethodID(longClass, "<init>", "(J)V");
+	const auto longClass = env->FindClass("java/lang/Long");
+	const auto longConstructor = env->GetMethodID(longClass, "<init>", "(J)V");
 
-	auto hashMap = env->NewObject(hashMapClass, hashMapConstructor);
+	const auto hashMap = env->NewObject(hashMapClass, hashMapConstructor);
 
-	for (const auto &entry : collector->getAllocations())
+	for (const auto &[fst, snd] : collector->getAllocations())
 	{
-		auto key = env->NewStringUTF(entry.first.c_str());
-		auto value = env->NewObject(longClass, longConstructor, entry.second);
+		const auto key = env->NewStringUTF(fst.c_str());
+		const auto value = env->NewObject(longClass, longConstructor, snd);
 
 		env->CallObjectMethod(hashMap, putMethod, key, value);
 

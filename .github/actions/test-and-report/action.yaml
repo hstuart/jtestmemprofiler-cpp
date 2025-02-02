@@ -1,0 +1,50 @@
+name: "Build and upload"
+description: "Compile using specified C++ compiler and upload as artifact"
+
+inputs:
+  java-version:
+    required: true
+    description: Java version to fetch and link against
+    type: string
+  cmake-configure:
+    required: false
+    description: cmake configuration call
+    type: string
+  test-path:
+    required: true
+    description: Path to the test executable
+    type: string
+  artifact-path:
+    required: true
+    description: Path to the artifact to upload
+    type: string
+  test-name:
+    required: true
+    description: Name of test check
+    type: string
+
+runs:
+  using: composite
+  steps:
+    -
+      uses: actions/setup-java@v4
+      with:
+        distribution: 'temurin'
+        java-version: ${{ inputs.java-version }}
+        architecture: 'x64'
+    -
+      run: ${{ inputs.cmake-configure }}
+      shell: bash
+    -
+      run: cmake --build build --config Release
+      shell: bash
+    -
+      run: ${{ inputs.test-path }} --gtest_output=xml:test.xml
+      shell: bash
+    -
+      uses: dorny/test-reporter@v1
+      if: always()
+      with:
+        name: Tests ${{ inputs.test-name }} jdk${{ inputs.java-version }}
+        path: test.xml
+        reporter: java-junit

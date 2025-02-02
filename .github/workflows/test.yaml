@@ -1,0 +1,109 @@
+name: Run test suite
+on:
+  push:
+    paths:
+      - '**/*.cpp'
+      - '**/*.hpp'
+      - '**/*.h'
+      - '**/.yaml'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  actions: read
+  checks: write
+
+jobs:
+  test-windows-jdk21:
+    runs-on: windows-latest
+
+    steps:
+      -
+        uses: actions/checkout@v4
+      -
+        uses: ./.github/actions/test-and-report
+        with:
+          java-version: 21
+          cmake-configure: cmake -G "Visual Studio 17 2022" -A x64 -DBUILD_TESTS=ON -B build .
+          artifact-path: build/Release/JTestMemProfiler.dll
+          test-path: build/Release/tests.exe
+          test-name: "windows"
+
+  test-windows-jdk17:
+    runs-on: windows-latest
+
+    steps:
+      -
+        uses: actions/checkout@v4
+      -
+        uses: ./.github/actions/test-and-report
+        with:
+          java-version: 17
+          cmake-configure: cmake -G "Visual Studio 17 2022" -A x64 -DBUILD_TESTS=ON -B build .
+          artifact-path: build/Release/JTestMemProfiler.dll
+          test-path: build/release/tests.exe
+          test-name: "windows"
+
+  test-linux-jdk21:
+    runs-on: ubuntu-latest
+
+    steps:
+      -
+        uses: actions/checkout@v4
+      -
+        run: sudo apt-get install -y build-essential cmake
+      -
+        uses: ./.github/actions/test-and-report
+        with:
+          java-version: 21
+          cmake-configure: cmake -G "Unix Makefiles" -DBUILD_TESTS=ON -B build .
+          artifact-path: build/libJTestMemProfiler.so
+          test-path: build/tests
+          test-name: "linux"
+
+  test-linux-jdk17:
+    runs-on: ubuntu-latest
+
+    steps:
+      -
+        uses: actions/checkout@v4
+      -
+        run: sudo apt-get install -y build-essential cmake
+      -
+        uses: ./.github/actions/test-and-report
+        with:
+          java-version: 17
+          cmake-configure: cmake -G "Unix Makefiles" -DBUILD_TESTS=ON -B build .
+          artifact-path: build/libJTestMemProfiler.so
+          test-path: build/tests
+          test-name: "linux"
+
+  test-macos-jdk21:
+    runs-on: macos-latest
+
+    steps:
+      -
+        uses: actions/checkout@v4
+      -
+        uses: ./.github/actions/test-and-report
+        with:
+          java-version: 21
+          cmake-configure: cmake -DCMAKE_BUILD_TYPE=Release -DCMAKE_OSX_ARCHITECTURES="x86_64;arm64" -DBUILD_TESTS=ON -B build .
+          artifact-path: build/libJTestMemProfiler.dylib
+          test-path: build/tests
+          test-name: "osx"
+
+  test-macos-jdk17:
+    runs-on: macos-latest
+
+    steps:
+      -
+        uses: actions/checkout@v4
+      -
+        uses: ./.github/actions/test-and-report
+        with:
+          java-version: 17
+          cmake-configure: cmake -DCMAKE_BUILD_TYPE=Release -DCMAKE_OSX_ARCHITECTURES="x86_64;arm64" -DBUILD_TESTS=ON -B build .
+          artifact-path: build/libJTestMemProfiler.dylib
+          test-path: build/tests
+          test-name: "osx"

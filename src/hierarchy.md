@@ -26,6 +26,7 @@ classDiagram
     filter <|-- thread_id_filter
     collector <|-- per_type_collector
     collector <|-- totals_collector
+    collector <|-- call_tree_collector
 
     profiler : -enabled bool
     profiler : +enable() void
@@ -43,6 +44,9 @@ classDiagram
 
     totals_collector : +sampledObjectAlloc(...) void
     totals_collector : +getAllocationTotal() jlong
+    
+    call_tree_collector : +sampledObjectAlloc(...) void
+    call_tree_collector : +get_trie() Trie
 
     filter : +sampledObjectAlloc(...)* bool
 

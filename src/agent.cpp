@@ -31,15 +31,13 @@ extern "C" JNIEXPORT jint JNICALL Agent_OnLoad(JavaVM *jvm, char *options, void 
 {
 	jvmtiEnv *jvmti = nullptr;
 
-	auto res = jvm->GetEnv((void **)&jvmti, JVMTI_VERSION);
-	if (JNI_OK != res || nullptr == jvmti)
+	if (auto res = jvm->GetEnv(reinterpret_cast<void **>(&jvmti), JVMTI_VERSION); JNI_OK != res || nullptr == jvmti)
 	{
 		std::fprintf(stderr, "Unable to get JVMTI interface for version %d\n", JVMTI_VERSION);
 		return JNI_ERR;
 	}
 
-	jvmtiCapabilities capabilities;
-	std::memset(&capabilities, 0, sizeof(capabilities));
+	jvmtiCapabilities capabilities = {};
 	capabilities.can_generate_sampled_object_alloc_events = 1;
 
 	auto error = jvmti->AddCapabilities(&capabilities);
@@ -49,8 +47,7 @@ extern "C" JNIEXPORT jint JNICALL Agent_OnLoad(JavaVM *jvm, char *options, void 
 		return JNI_ERR;
 	}
 
-	jvmtiEventCallbacks callbacks;
-	std::memset(&callbacks, 0, sizeof(callbacks));
+	jvmtiEventCallbacks callbacks = {};
 	callbacks.SampledObjectAlloc = &sampledObjectAlloc;
 	callbacks.VMDeath = &vmDeath;
 

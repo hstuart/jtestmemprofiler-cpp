@@ -4,19 +4,19 @@
 
 #include "collector.hpp"
 
-class totals_collector : collector
+class totals_collector final : collector
 {
 public:
 	totals_collector();
 
-	jlong getTotal();
+	jlong getTotal() const;
 
-	virtual void sampledObjectAlloc(jvmtiEnv *jvmti_env,
-									JNIEnv *jni_env,
-									jthread thread,
-									jobject object,
-									jclass object_klass,
-									jlong size);
+	void sampledObjectAlloc(jvmtiEnv *jvmti_env,
+	                        JNIEnv *jni_env,
+	                        jthread thread,
+	                        jobject object,
+	                        jclass object_klass,
+	                        jlong size) override;
 
 private:
 	std::atomic<jlong> _total;

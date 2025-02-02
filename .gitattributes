@@ -4,6 +4,7 @@
 *.hpp   text=lf
 *.txt   text=lf
 *.json  text=lf
+*.yaml  text=lf
 
 .gitattributes  text=lf
 .gitignore  text=lf
